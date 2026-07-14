@@ -31,25 +31,36 @@ else
 
             <div>
                 <MudText Typo="Typo.subtitle1" Class="mb-1">🛠️ Activities</MudText>
-                <MudStack>
-                    @foreach (var activity in WorkActivities.Fixed)
-                    {
-                        <MudCheckBox T="bool" Value="@_entry.Activities.Contains(activity)"
+                @foreach (var activity in WorkActivities.Fixed)
+                {
+                    var current = _entry.Activities.FirstOrDefault(a => a.Name == activity);
+                    <div class="mb-3">
+                        <MudCheckBox T="bool" Value="@(current is not null)"
                                      ValueChanged="@(v => ToggleActivity(activity, v))"
                                      Label="@($"{WorkActivities.Emoji(activity)} {activity}")" Color="Color.Primary" />
-                    }
-                </MudStack>
-
-                @{ var customTags = _entry.Activities.Except(WorkActivities.Fixed).ToList(); }
-                @if (customTags.Count > 0)
-                {
-                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
-                        @foreach (var tag in customTags)
+                        @if (current is not null)
                         {
-                            <MudChip T="string" Color="Color.Secondary" Size="Size.Small"
-                                     OnClose="@(_ => RemoveTag(tag))">@tag</MudChip>
+                            <MudText Typo="Typo.body2" Class="muted ml-8">@current.Minutes min</MudText>
+                            <div class="ml-8">
+                                <MudSlider T="int" Value="@current.Minutes" ValueChanged="@(v => current.Minutes = v)"
+                                           Min="1" Max="180" Step="1" Color="Color.Primary" />
+                            </div>
                         }
-                    </MudStack>
+                    </div>
+                }
+
+                @{ var customTags = _entry.Activities.Where(a => !WorkActivities.Fixed.Contains(a.Name)).ToList(); }
+                @foreach (var tag in customTags)
+                {
+                    <div class="mb-3">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudChip T="string" Color="Color.Secondary" Size="Size.Small"
+                                     OnClose="@(_ => RemoveTag(tag.Name))">@tag.Name</MudChip>
+                            <MudText Typo="Typo.body2" Class="muted">@tag.Minutes min</MudText>
+                        </MudStack>
+                        <MudSlider T="int" Value="@tag.Minutes" ValueChanged="@(v => tag.Minutes = v)"
+                                   Min="1" Max="180" Step="1" Color="Color.Secondary" />
+                    </div>
                 }
 
                 <MudStack Row="true" Spacing="2" Class="mt-2" AlignItems="AlignItems.End">
@@ -102,19 +113,19 @@ else
 
     void ToggleActivity(string activity, bool selected)
     {
-        if (selected) { if (!_entry!.Activities.Contains(activity)) _entry.Activities.Add(activity); }
-        else { _entry!.Activities.Remove(activity); }
+        if (selected) { if (!_entry!.Activities.Any(a => a.Name == activity)) _entry.Activities.Add(new ActivityEntry { Name = activity, Minutes = 15 }); }
+        else { _entry!.Activities.RemoveAll(a => a.Name == activity); }
     }
 
     void AddTag()
     {
         var tag = _newTag.Trim();
-        if (!string.IsNullOrWhiteSpace(tag) && !_entry!.Activities.Contains(tag))
-            _entry.Activities.Add(tag);
+        if (!string.IsNullOrWhiteSpace(tag) && !_entry!.Activities.Any(a => a.Name == tag))
+            _entry.Activities.Add(new ActivityEntry { Name = tag, Minutes = 15 });
         _newTag = "";
     }
 
-    void RemoveTag(string tag) => _entry!.Activities.Remove(tag);
+    void RemoveTag(string name) => _entry!.Activities.RemoveAll(a => a.Name == name);
 
     async Task SaveAsync()
     {
