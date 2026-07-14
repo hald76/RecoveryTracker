@@ -13,43 +13,21 @@
             </div>
 
             <div>
-                <MudText Typo="Typo.subtitle1" Class="mb-1">🛠️ Activities</MudText>
-                @foreach (var activity in WorkActivities.Fixed)
+                <MudText Typo="Typo.subtitle1" Class="mb-1">🛠️ Activity</MudText>
+                <MudSelect T="string" Value="@_selectedActivity" ValueChanged="OnActivityChanged" Variant="Variant.Outlined">
+                    @foreach (var activity in WorkActivities.All)
+                    {
+                        <MudSelectItem Value="@activity">@WorkActivities.Emoji(activity) @activity</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (_selectedActivity == WorkActivities.Other)
                 {
-                    var current = _entry.Activities.FirstOrDefault(a => a.Name == activity);
-                    <div class="mb-3">
-                        <MudCheckBox T="bool" Value="@(current is not null)"
-                                     ValueChanged="@(v => ToggleActivity(activity, v))"
-                                     Label="@($"{WorkActivities.Emoji(activity)} {activity}")" Color="Color.Primary" />
-                        @if (current is not null)
-                        {
-                            <MudText Typo="Typo.body2" Class="muted ml-8">@current.Minutes min</MudText>
-                            <div class="ml-8">
-                                <MudSlider T="int" Value="@current.Minutes" ValueChanged="@(v => current.Minutes = v)"
-                                           Min="1" Max="180" Step="1" Color="Color.Primary" />
-                            </div>
-                        }
-                    </div>
+                    <MudTextField @bind-Value="_entry.ActivityName" Immediate="true" Label="Custom activity" Variant="Variant.Outlined" Class="mt-3" />
                 }
 
-                @{ var customTags = _entry.Activities.Where(a => !WorkActivities.Fixed.Contains(a.Name)).ToList(); }
-                @foreach (var tag in customTags)
-                {
-                    <div class="mb-3">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                            <MudChip T="string" Color="Color.Secondary" Size="Size.Small"
-                                     OnClose="@(_ => RemoveTag(tag.Name))">@tag.Name</MudChip>
-                            <MudText Typo="Typo.body2" Class="muted">@tag.Minutes min</MudText>
-                        </MudStack>
-                        <MudSlider T="int" Value="@tag.Minutes" ValueChanged="@(v => tag.Minutes = v)"
-                                   Min="1" Max="180" Step="1" Color="Color.Secondary" />
-                    </div>
-                }
-
-                <MudStack Row="true" Spacing="2" Class="mt-2" AlignItems="AlignItems.End">
-                    <MudTextField @bind-Value="_newTag" Immediate="true" Label="Other (custom activity)" Variant="Variant.Outlined" />
-                    <MudButton Variant="Variant.Outlined" OnClick="AddTag">Add</MudButton>
-                </MudStack>
+                <MudText Typo="Typo.body2" Class="muted mt-3">@_entry.ActivityMinutes min</MudText>
+                <MudSlider @bind-Value="_entry.ActivityMinutes" Min="1" Max="180" Step="1" Color="Color.Primary" />
             </div>
 
             <MudStack Row="true" Justify="Justify.SpaceBetween">
@@ -83,7 +61,7 @@
 
     DailyEntry _entry = new();
     DateTime? _date;
-    string _newTag = "";
+    string _selectedActivity = WorkActivities.Fixed[0];
 
     protected override void OnInitialized()
     {
@@ -92,30 +70,23 @@
             Id = Entry.Id,
             EntryDate = Entry.EntryDate,
             PainLevel = Entry.PainLevel,
-            Activities = Entry.Activities.Select(a => new ActivityEntry { Name = a.Name, Minutes = a.Minutes }).ToList(),
+            ActivityName = Entry.ActivityName,
+            ActivityMinutes = Entry.ActivityMinutes,
             IceApplied = Entry.IceApplied,
             MedicationTaken = Entry.MedicationTaken,
             Swelling = Entry.Swelling,
             Note = Entry.Note
         };
         _date = _entry.EntryDate.ToDateTime(TimeOnly.MinValue);
+        _selectedActivity = WorkActivities.Fixed.Contains(_entry.ActivityName) ? _entry.ActivityName : WorkActivities.Other;
     }
 
-    void ToggleActivity(string activity, bool selected)
+    void OnActivityChanged(string value)
     {
-        if (selected) { if (!_entry.Activities.Any(a => a.Name == activity)) _entry.Activities.Add(new ActivityEntry { Name = activity, Minutes = 15 }); }
-        else { _entry.Activities.RemoveAll(a => a.Name == activity); }
+        _selectedActivity = value;
+        if (value != WorkActivities.Other) _entry.ActivityName = value;
+        else if (WorkActivities.Fixed.Contains(_entry.ActivityName)) _entry.ActivityName = "";
     }
-
-    void AddTag()
-    {
-        var tag = _newTag.Trim();
-        if (!string.IsNullOrWhiteSpace(tag) && !_entry.Activities.Any(a => a.Name == tag))
-            _entry.Activities.Add(new ActivityEntry { Name = tag, Minutes = 15 });
-        _newTag = "";
-    }
-
-    void RemoveTag(string name) => _entry.Activities.RemoveAll(a => a.Name == name);
 
     async Task SaveAsync()
     {

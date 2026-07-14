@@ -38,7 +38,7 @@ else
             <RowTemplate>
                 <MudTd>@context.EntryDate.ToString("MMM d, yyyy")</MudTd>
                 <MudTd>@context.PainLevel / 10</MudTd>
-                <MudTd>@(context.Activities.Count > 0 ? string.Join(", ", context.Activities.Select(a => $"{a.Name} ({a.Minutes} min)")) : "—")</MudTd>
+                <MudTd>@context.ActivityName (@context.ActivityMinutes min)</MudTd>
                 <MudTd>@(context.IceApplied ? "Yes" : "No")</MudTd>
                 <MudTd>@(context.MedicationTaken ? "Yes" : "No")</MudTd>
                 <MudTd>@context.Swelling</MudTd>
