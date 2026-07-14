@@ -12,7 +12,34 @@
                 <MudSlider @bind-Value="_entry.PainLevel" Min="0" Max="10" Step="1" Color="Color.Primary" />
             </div>
 
-            <MudNumericField @bind-Value="_entry.WalkingMinutes" Label="🚶 Walking (minutes)" Min="0" Max="600" Variant="Variant.Outlined" />
+            <div>
+                <MudText Typo="Typo.subtitle1" Class="mb-1">🛠️ Activities</MudText>
+                <MudStack>
+                    @foreach (var activity in WorkActivities.Fixed)
+                    {
+                        <MudCheckBox T="bool" Value="@_entry.Activities.Contains(activity)"
+                                     ValueChanged="@(v => ToggleActivity(activity, v))"
+                                     Label="@($"{WorkActivities.Emoji(activity)} {activity}")" Color="Color.Primary" />
+                    }
+                </MudStack>
+
+                @{ var customTags = _entry.Activities.Except(WorkActivities.Fixed).ToList(); }
+                @if (customTags.Count > 0)
+                {
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                        @foreach (var tag in customTags)
+                        {
+                            <MudChip T="string" Color="Color.Secondary" Size="Size.Small"
+                                     OnClose="@(_ => RemoveTag(tag))">@tag</MudChip>
+                        }
+                    </MudStack>
+                }
+
+                <MudStack Row="true" Spacing="2" Class="mt-2" AlignItems="AlignItems.End">
+                    <MudTextField @bind-Value="_newTag" Immediate="true" Label="Other (custom activity)" Variant="Variant.Outlined" />
+                    <MudButton Variant="Variant.Outlined" OnClick="AddTag">Add</MudButton>
+                </MudStack>
+            </div>
 
             <MudStack Row="true" Justify="Justify.SpaceBetween">
                 <MudSwitch @bind-Value="_entry.IceApplied" Color="Color.Info" Label="🧊 Ice applied" />
@@ -45,6 +72,7 @@
 
     DailyEntry _entry = new();
     DateTime? _date;
+    string _newTag = "";
 
     protected override void OnInitialized()
     {
@@ -53,7 +81,7 @@
             Id = Entry.Id,
             EntryDate = Entry.EntryDate,
             PainLevel = Entry.PainLevel,
-            WalkingMinutes = Entry.WalkingMinutes,
+            Activities = new List<string>(Entry.Activities),
             IceApplied = Entry.IceApplied,
             MedicationTaken = Entry.MedicationTaken,
             Swelling = Entry.Swelling,
@@ -61,6 +89,22 @@
         };
         _date = _entry.EntryDate.ToDateTime(TimeOnly.MinValue);
     }
+
+    void ToggleActivity(string activity, bool selected)
+    {
+        if (selected) { if (!_entry.Activities.Contains(activity)) _entry.Activities.Add(activity); }
+        else { _entry.Activities.Remove(activity); }
+    }
+
+    void AddTag()
+    {
+        var tag = _newTag.Trim();
+        if (!string.IsNullOrWhiteSpace(tag) && !_entry.Activities.Contains(tag))
+            _entry.Activities.Add(tag);
+        _newTag = "";
+    }
+
+    void RemoveTag(string tag) => _entry.Activities.Remove(tag);
 
     async Task SaveAsync()
     {

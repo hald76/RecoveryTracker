@@ -61,8 +61,8 @@
                 <MudText Typo="Typo.h6">@_avgPain.ToString("0.#") / 10</MudText>
             </MudItem>
             <MudItem xs="6" sm="3">
-                <MudText Typo="Typo.caption" Class="muted">Total walking</MudText>
-                <MudText Typo="Typo.h6">@_totalWalking min</MudText>
+                <MudText Typo="Typo.caption" Class="muted">Active days</MudText>
+                <MudText Typo="Typo.h6">@_activeDays / @_entries.Count</MudText>
             </MudItem>
             <MudItem xs="6" sm="3">
                 <MudText Typo="Typo.caption" Class="muted">Medication taken</MudText>
@@ -82,7 +82,7 @@
         {
             <table class="report-table">
                 <thead>
-                    <tr><th>Date</th><th>Pain</th><th>Walking</th><th>Ice</th><th>Medication</th><th>Swelling</th><th>Note</th></tr>
+                    <tr><th>Date</th><th>Pain</th><th>Activities</th><th>Ice</th><th>Medication</th><th>Swelling</th><th>Note</th></tr>
                 </thead>
                 <tbody>
                     @foreach (var e in _entries)
@@ -90,7 +90,7 @@
                         <tr>
                             <td>@e.EntryDate.ToString("MMM d")</td>
                             <td>@e.PainLevel / 10</td>
-                            <td>@e.WalkingMinutes min</td>
+                            <td>@(e.Activities.Count > 0 ? string.Join(", ", e.Activities) : "—")</td>
                             <td>@(e.IceApplied ? "Yes" : "No")</td>
                             <td>@(e.MedicationTaken ? "Yes" : "No")</td>
                             <td>@e.Swelling</td>
@@ -112,7 +112,7 @@
     DateOnly _rangeFrom;
     DateOnly _rangeTo;
     double _avgPain;
-    int _totalWalking;
+    int _activeDays;
     double _medAdherence;
     int _iceDays;
 
@@ -131,7 +131,7 @@
         _profile = await ProfileSvc.GetAsync();
 
         _avgPain = _entries.Count > 0 ? _entries.Average(e => e.PainLevel) : 0;
-        _totalWalking = _entries.Sum(e => e.WalkingMinutes);
+        _activeDays = _entries.Count(e => e.Activities.Count > 0);
         _medAdherence = _entries.Count > 0 ? _entries.Count(e => e.MedicationTaken) * 100.0 / _entries.Count : 0;
         _iceDays = _entries.Count(e => e.IceApplied);
         _loaded = true;

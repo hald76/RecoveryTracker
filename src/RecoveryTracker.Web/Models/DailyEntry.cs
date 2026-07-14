@@ -11,8 +11,7 @@ public class DailyEntry
     [Range(0, 10)]
     public int PainLevel { get; set; }
 
-    [Range(0, 600)]
-    public int WalkingMinutes { get; set; }
+    public List<string> Activities { get; set; } = new();
 
     public bool IceApplied { get; set; }
 
@@ -33,4 +32,18 @@ public enum SwellingLevel
     Mild = 1,
     Moderate = 2,
     Severe = 3
+}
+
+public static class WorkActivities
+{
+    public static readonly string[] Fixed = { "Walking", "Computer desk work", "Hardware repair", "Moving equipment" };
+
+    public static string Emoji(string activity) => activity switch
+    {
+        "Walking" => "🚶",
+        "Computer desk work" => "💻",
+        "Hardware repair" => "🔧",
+        "Moving equipment" => "📦",
+        _ => "🏷️"
+    };
 }

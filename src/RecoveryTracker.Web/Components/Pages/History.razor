@@ -28,7 +28,7 @@ else
             <HeaderContent>
                 <MudTh>Date</MudTh>
                 <MudTh>Pain</MudTh>
-                <MudTh>Walking</MudTh>
+                <MudTh>Activities</MudTh>
                 <MudTh>Ice</MudTh>
                 <MudTh>Medication</MudTh>
                 <MudTh>Swelling</MudTh>
@@ -38,7 +38,7 @@ else
             <RowTemplate>
                 <MudTd>@context.EntryDate.ToString("MMM d, yyyy")</MudTd>
                 <MudTd>@context.PainLevel / 10</MudTd>
-                <MudTd>@context.WalkingMinutes min</MudTd>
+                <MudTd>@(context.Activities.Count > 0 ? string.Join(", ", context.Activities) : "—")</MudTd>
                 <MudTd>@(context.IceApplied ? "Yes" : "No")</MudTd>
                 <MudTd>@(context.MedicationTaken ? "Yes" : "No")</MudTd>
                 <MudTd>@context.Swelling</MudTd>

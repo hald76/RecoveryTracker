@@ -55,7 +55,7 @@ public class EntryService : IEntryService
 
         existing.EntryDate = entry.EntryDate;
         existing.PainLevel = entry.PainLevel;
-        existing.WalkingMinutes = entry.WalkingMinutes;
+        existing.Activities = entry.Activities;
         existing.IceApplied = entry.IceApplied;
         existing.MedicationTaken = entry.MedicationTaken;
         existing.Swelling = entry.Swelling;
