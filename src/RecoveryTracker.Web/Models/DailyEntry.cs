@@ -11,7 +11,7 @@ public class DailyEntry
     [Range(0, 10)]
     public int PainLevel { get; set; }
 
-    public string ActivityName { get; set; } = "Walking";
+    public string ActivityName { get; set; } = "Computer desk work";
 
     [Range(1, 180)]
     public int ActivityMinutes { get; set; } = 15;
