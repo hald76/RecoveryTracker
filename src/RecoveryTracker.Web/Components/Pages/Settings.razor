@@ -1,0 +1,48 @@
+@page "/settings"
+@inject IProfileService ProfileSvc
+@inject ISnackbar Snackbar
+
+<PageTitle>Settings — Recovery Tracker</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Settings</MudText>
+
+@if (_profile is null)
+{
+    <MudText>Loading…</MudText>
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudStack Spacing="4">
+            <MudTextField @bind-Value="_profile.SurgeryName" Immediate="true" Label="Surgery / procedure name" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="_surgeryDate" Label="Surgery date" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_profile.DoctorName" Immediate="true" Label="Doctor name" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="_appointmentDate" Label="Next follow-up appointment" Variant="Variant.Outlined" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveAsync">
+                Save
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    RecoveryProfile? _profile;
+    DateTime? _surgeryDate;
+    DateTime? _appointmentDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = await ProfileSvc.GetAsync();
+        _surgeryDate = _profile.SurgeryDate?.ToDateTime(TimeOnly.MinValue);
+        _appointmentDate = _profile.NextAppointmentDate?.ToDateTime(TimeOnly.MinValue);
+    }
+
+    async Task SaveAsync()
+    {
+        _profile!.SurgeryDate = _surgeryDate is { } sd ? DateOnly.FromDateTime(sd) : null;
+        _profile.NextAppointmentDate = _appointmentDate is { } ad ? DateOnly.FromDateTime(ad) : null;
+        await ProfileSvc.SaveAsync(_profile);
+        Snackbar.Add("Settings saved", Severity.Success);
+    }
+}

@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# IMPORTANT: BASE_PATH must match this repo's name (GitHub Pages project sites are served
+# from https://<user>.github.io/<repo-name>/). If you rename the repo, update this value.
+env:
+  BASE_PATH: /RecoveryTracker/
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Publish
+        run: dotnet publish src/RecoveryTracker.Web -c Release -o publish_output
+
+      - name: Set base href for GitHub Pages subpath
+        run: sed -i "s|<base href=\"/\" />|<base href=\"${{ env.BASE_PATH }}\" />|" publish_output/wwwroot/index.html
+
+      - name: SPA fallback (404 -> index) so client-side routes survive a hard refresh
+        run: cp publish_output/wwwroot/index.html publish_output/wwwroot/404.html
+
+      - name: Disable Jekyll processing (needed so _framework/ isn't stripped)
+        run: touch publish_output/wwwroot/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish_output/wwwroot
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

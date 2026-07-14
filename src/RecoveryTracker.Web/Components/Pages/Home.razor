@@ -1,0 +1,80 @@
+@page "/"
+@inject IEntryService EntrySvc
+@inject IProfileService ProfileSvc
+@inject ISnackbar Snackbar
+
+<PageTitle>Today — Recovery Tracker</PageTitle>
+
+@if (_entry is null)
+{
+    <MudText>Loading…</MudText>
+}
+else
+{
+    <MudStack Spacing="0" Class="mb-4">
+        <MudText Typo="Typo.h4">Today</MudText>
+        <MudText Typo="Typo.body2" Class="muted">
+            @_today.ToString("dddd, MMMM d, yyyy")
+            @if (_dayNumber is { } d)
+            {
+                <span> &nbsp;•&nbsp; Day @d post-op</span>
+            }
+        </MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudStack Spacing="6">
+            <div>
+                <MudText Typo="Typo.subtitle1">😊 Pain level: @_entry.PainLevel / 10</MudText>
+                <MudSlider @bind-Value="_entry.PainLevel" Min="0" Max="10" Step="1" Color="Color.Primary" />
+            </div>
+
+            <MudNumericField @bind-Value="_entry.WalkingMinutes" Label="🚶 Walking (minutes)" Min="0" Max="600" Variant="Variant.Outlined" />
+
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudSwitch @bind-Value="_entry.IceApplied" Color="Color.Info" Label="🧊 Ice applied" />
+                <MudSwitch @bind-Value="_entry.MedicationTaken" Color="Color.Success" Label="💊 Medication taken" />
+            </MudStack>
+
+            <div>
+                <MudText Typo="Typo.subtitle1" Class="mb-1">🦵 Swelling</MudText>
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                    @foreach (var level in Enum.GetValues<SwellingLevel>())
+                    {
+                        <MudButton Variant="@(_entry.Swelling == level ? Variant.Filled : Variant.Outlined)"
+                                   OnClick="@(() => _entry.Swelling = level)">@level</MudButton>
+                    }
+                </MudButtonGroup>
+            </div>
+
+            <MudTextField @bind-Value="_entry.Note" Immediate="true" Label="📝 Quick note" Variant="Variant.Outlined" Lines="3" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.Check" OnClick="SaveAsync">
+                Save today's entry
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    DailyEntry? _entry;
+    DateOnly _today;
+    int? _dayNumber;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _today = DateOnly.FromDateTime(DateTime.Now);
+        _entry = await EntrySvc.GetByDateAsync(_today) ?? new DailyEntry { EntryDate = _today };
+
+        var profile = await ProfileSvc.GetAsync();
+        if (profile.SurgeryDate is { } sd)
+            _dayNumber = _today.DayNumber - sd.DayNumber;
+    }
+
+    async Task SaveAsync()
+    {
+        _entry = await EntrySvc.UpsertAsync(_entry!);
+        Snackbar.Add("Saved today's entry", Severity.Success);
+    }
+}

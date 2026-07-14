@@ -1,0 +1,141 @@
+@page "/report"
+@inject IEntryService EntrySvc
+@inject IProfileService ProfileSvc
+@inject IJSRuntime JS
+
+<PageTitle>Report — Recovery Tracker</PageTitle>
+
+<div class="no-print">
+    <MudText Typo="Typo.h4" Class="mb-4">Follow-up report</MudText>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudText Typo="Typo.body2" Class="muted mb-4">
+            Pick a date range, preview the summary, then print it or save it as a PDF to bring to your appointment.
+        </MudText>
+
+        <MudStack Spacing="4">
+            <MudDatePicker @bind-Date="_from" Label="From" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="_to" Label="To" Variant="Variant.Outlined" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.Preview" OnClick="LoadAsync">
+                Preview report
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+</div>
+
+@if (_loaded)
+{
+    <MudPaper Class="pa-4" Elevation="1">
+        <div class="no-print mb-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Print" OnClick="PrintAsync">
+                Print / Save as PDF
+            </MudButton>
+        </div>
+
+        <MudText Typo="Typo.h5">Recovery Report</MudText>
+        @if (!string.IsNullOrWhiteSpace(_profile?.SurgeryName))
+        {
+            <MudText>@_profile!.SurgeryName</MudText>
+        }
+        @if (_profile?.SurgeryDate is { } sd)
+        {
+            <MudText Typo="Typo.body2" Class="muted">Surgery date: @sd.ToString("MMM d, yyyy")</MudText>
+        }
+        <MudText Typo="Typo.body1" Class="mt-2">
+            <b>@_rangeFrom.ToString("MMM d, yyyy") – @_rangeTo.ToString("MMM d, yyyy")</b>
+            @if (!string.IsNullOrWhiteSpace(_profile?.DoctorName))
+            {
+                <span> &nbsp;•&nbsp; For: Dr. @_profile!.DoctorName</span>
+            }
+            @if (_profile?.NextAppointmentDate is { } ad)
+            {
+                <span> &nbsp;•&nbsp; Appointment: @ad.ToString("MMM d, yyyy")</span>
+            }
+        </MudText>
+
+        <MudGrid Class="my-4">
+            <MudItem xs="6" sm="3">
+                <MudText Typo="Typo.caption" Class="muted">Avg. pain</MudText>
+                <MudText Typo="Typo.h6">@_avgPain.ToString("0.#") / 10</MudText>
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudText Typo="Typo.caption" Class="muted">Total walking</MudText>
+                <MudText Typo="Typo.h6">@_totalWalking min</MudText>
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudText Typo="Typo.caption" Class="muted">Medication taken</MudText>
+                <MudText Typo="Typo.h6">@_medAdherence.ToString("0")%</MudText>
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudText Typo="Typo.caption" Class="muted">Ice days</MudText>
+                <MudText Typo="Typo.h6">@_iceDays / @_entries.Count</MudText>
+            </MudItem>
+        </MudGrid>
+
+        @if (_entries.Count == 0)
+        {
+            <MudText Class="muted"><em>No entries logged in this date range.</em></MudText>
+        }
+        else
+        {
+            <table class="report-table">
+                <thead>
+                    <tr><th>Date</th><th>Pain</th><th>Walking</th><th>Ice</th><th>Medication</th><th>Swelling</th><th>Note</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in _entries)
+                    {
+                        <tr>
+                            <td>@e.EntryDate.ToString("MMM d")</td>
+                            <td>@e.PainLevel / 10</td>
+                            <td>@e.WalkingMinutes min</td>
+                            <td>@(e.IceApplied ? "Yes" : "No")</td>
+                            <td>@(e.MedicationTaken ? "Yes" : "No")</td>
+                            <td>@e.Swelling</td>
+                            <td>@e.Note</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </MudPaper>
+}
+
+@code {
+    DateTime? _from;
+    DateTime? _to;
+    bool _loaded;
+    List<DailyEntry> _entries = new();
+    RecoveryProfile? _profile;
+    DateOnly _rangeFrom;
+    DateOnly _rangeTo;
+    double _avgPain;
+    int _totalWalking;
+    double _medAdherence;
+    int _iceDays;
+
+    protected override void OnInitialized()
+    {
+        _to = DateTime.Now;
+        _from = DateTime.Now.AddDays(-13);
+    }
+
+    async Task LoadAsync()
+    {
+        _rangeFrom = DateOnly.FromDateTime(_from ?? DateTime.Now.AddDays(-13));
+        _rangeTo = DateOnly.FromDateTime(_to ?? DateTime.Now);
+
+        _entries = await EntrySvc.GetInRangeAsync(_rangeFrom, _rangeTo);
+        _profile = await ProfileSvc.GetAsync();
+
+        _avgPain = _entries.Count > 0 ? _entries.Average(e => e.PainLevel) : 0;
+        _totalWalking = _entries.Sum(e => e.WalkingMinutes);
+        _medAdherence = _entries.Count > 0 ? _entries.Count(e => e.MedicationTaken) * 100.0 / _entries.Count : 0;
+        _iceDays = _entries.Count(e => e.IceApplied);
+        _loaded = true;
+    }
+
+    async Task PrintAsync() => await JS.InvokeVoidAsync("print");
+}

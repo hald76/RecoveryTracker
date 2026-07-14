@@ -1,0 +1,73 @@
+@inject IEntryService EntrySvc
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="6">
+            <div>
+                <MudDatePicker @bind-Date="_date" Label="Date" Variant="Variant.Outlined" />
+            </div>
+
+            <div>
+                <MudText Typo="Typo.subtitle1">😊 Pain level: @_entry.PainLevel / 10</MudText>
+                <MudSlider @bind-Value="_entry.PainLevel" Min="0" Max="10" Step="1" Color="Color.Primary" />
+            </div>
+
+            <MudNumericField @bind-Value="_entry.WalkingMinutes" Label="🚶 Walking (minutes)" Min="0" Max="600" Variant="Variant.Outlined" />
+
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudSwitch @bind-Value="_entry.IceApplied" Color="Color.Info" Label="🧊 Ice applied" />
+                <MudSwitch @bind-Value="_entry.MedicationTaken" Color="Color.Success" Label="💊 Medication taken" />
+            </MudStack>
+
+            <div>
+                <MudText Typo="Typo.subtitle1" Class="mb-1">🦵 Swelling</MudText>
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                    @foreach (var level in Enum.GetValues<SwellingLevel>())
+                    {
+                        <MudButton Variant="@(_entry.Swelling == level ? Variant.Filled : Variant.Outlined)"
+                                   OnClick="@(() => _entry.Swelling = level)">@level</MudButton>
+                    }
+                </MudButtonGroup>
+            </div>
+
+            <MudTextField @bind-Value="_entry.Note" Immediate="true" Label="📝 Quick note" Variant="Variant.Outlined" Lines="3" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public DailyEntry Entry { get; set; } = new();
+
+    DailyEntry _entry = new();
+    DateTime? _date;
+
+    protected override void OnInitialized()
+    {
+        _entry = new DailyEntry
+        {
+            Id = Entry.Id,
+            EntryDate = Entry.EntryDate,
+            PainLevel = Entry.PainLevel,
+            WalkingMinutes = Entry.WalkingMinutes,
+            IceApplied = Entry.IceApplied,
+            MedicationTaken = Entry.MedicationTaken,
+            Swelling = Entry.Swelling,
+            Note = Entry.Note
+        };
+        _date = _entry.EntryDate.ToDateTime(TimeOnly.MinValue);
+    }
+
+    async Task SaveAsync()
+    {
+        _entry.EntryDate = DateOnly.FromDateTime(_date ?? DateTime.Now);
+        var saved = await EntrySvc.UpsertAsync(_entry);
+        MudDialog.Close(DialogResult.Ok(saved));
+    }
+
+    void Cancel() => MudDialog.Cancel();
+}

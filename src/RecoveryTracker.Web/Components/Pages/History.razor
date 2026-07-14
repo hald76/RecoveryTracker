@@ -1,0 +1,109 @@
+@page "/history"
+@inject IEntryService EntrySvc
+@inject IDialogService DialogSvc
+@inject ISnackbar Snackbar
+
+<PageTitle>History — Recovery Tracker</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Typo="Typo.h4">History</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="AddPastEntryAsync">Add past entry</MudButton>
+</MudStack>
+
+@if (_entries.Count == 0)
+{
+    <MudText Class="muted">No entries logged yet. Head to Today to log your first entry.</MudText>
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudText Typo="Typo.h6" Class="mb-2">Pain trend</MudText>
+        <MudChart ChartType="ChartType.Line" ChartSeries="@_painSeries" XAxisLabels="@_labels"
+                  Width="100%" Height="280px" />
+    </MudPaper>
+
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudTable Items="@_entries.OrderByDescending(e => e.EntryDate)" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>Date</MudTh>
+                <MudTh>Pain</MudTh>
+                <MudTh>Walking</MudTh>
+                <MudTh>Ice</MudTh>
+                <MudTh>Medication</MudTh>
+                <MudTh>Swelling</MudTh>
+                <MudTh>Note</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.EntryDate.ToString("MMM d, yyyy")</MudTd>
+                <MudTd>@context.PainLevel / 10</MudTd>
+                <MudTd>@context.WalkingMinutes min</MudTd>
+                <MudTd>@(context.IceApplied ? "Yes" : "No")</MudTd>
+                <MudTd>@(context.MedicationTaken ? "Yes" : "No")</MudTd>
+                <MudTd>@context.Swelling</MudTd>
+                <MudTd>@context.Note</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditAsync(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+}
+
+@code {
+    List<DailyEntry> _entries = new();
+    List<ChartSeries> _painSeries = new();
+    string[] _labels = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    async Task LoadAsync()
+    {
+        _entries = await EntrySvc.GetAllAsync();
+        var ordered = _entries.OrderBy(e => e.EntryDate).ToList();
+        _labels = ordered.Select(e => e.EntryDate.ToString("M/d")).ToArray();
+        _painSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Pain", Data = ordered.Select(e => (double)e.PainLevel).ToArray() }
+        };
+    }
+
+    async Task EditAsync(DailyEntry entry)
+    {
+        var parameters = new DialogParameters<EntryDialog> { { x => x.Entry, entry } };
+        var dialog = await DialogSvc.ShowAsync<EntryDialog>("Edit entry", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            await LoadAsync();
+            Snackbar.Add("Entry updated", Severity.Success);
+        }
+    }
+
+    async Task AddPastEntryAsync()
+    {
+        var parameters = new DialogParameters<EntryDialog>
+        {
+            { x => x.Entry, new DailyEntry { EntryDate = DateOnly.FromDateTime(DateTime.Now) } }
+        };
+        var dialog = await DialogSvc.ShowAsync<EntryDialog>("Add entry", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            await LoadAsync();
+            Snackbar.Add("Entry saved", Severity.Success);
+        }
+    }
+
+    async Task DeleteAsync(DailyEntry entry)
+    {
+        bool? confirmed = await DialogSvc.ShowMessageBox(
+            "Delete entry", $"Delete the entry for {entry.EntryDate:MMM d, yyyy}?", yesText: "Delete", cancelText: "Cancel");
+        if (confirmed != true) return;
+        await EntrySvc.DeleteAsync(entry.Id);
+        await LoadAsync();
+        Snackbar.Add("Entry deleted", Severity.Success);
+    }
+}
