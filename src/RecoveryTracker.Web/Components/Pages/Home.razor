@@ -79,6 +79,10 @@
         var profile = await ProfileSvc.GetAsync();
         if (profile.SurgeryDate is { } sd)
             _dayNumber = _today.DayNumber - sd.DayNumber;
+
+        var entries = await EntrySvc.GetAllAsync();
+        if (entries.Count > 0)
+            _entry.PainLevel = entries[^1].PainLevel;
     }
 
     void OnActivityChanged(string value)
@@ -93,7 +97,8 @@
         _entry.Timestamp = DateTime.Now;
         await EntrySvc.UpsertAsync(_entry);
         Snackbar.Add($"Entry saved at {_entry.Timestamp:h:mm tt}", Severity.Success);
-        _entry = new DailyEntry();
+        var lastPainLevel = _entry.PainLevel;
+        _entry = new DailyEntry { PainLevel = lastPainLevel };
         _selectedActivity = _entry.ActivityName;
     }
 }
