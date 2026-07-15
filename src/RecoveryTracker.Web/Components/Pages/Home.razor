@@ -16,6 +16,11 @@
     </MudText>
 </MudStack>
 
+<MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Large" FullWidth="true"
+           StartIcon="@Icons.Material.Filled.Medication" Class="mb-4" OnClick="LogTylenolAsync">
+    💊 Took Tylenol
+</MudButton>
+
 <MudPaper Class="pa-4" Elevation="1">
     <MudStack Spacing="6">
         <div>
@@ -100,5 +105,20 @@
         var lastPainLevel = _entry.PainLevel;
         _entry = new DailyEntry { PainLevel = lastPainLevel };
         _selectedActivity = _entry.ActivityName;
+    }
+
+    async Task LogTylenolAsync()
+    {
+        var tylenolEntry = new DailyEntry
+        {
+            Timestamp = DateTime.Now,
+            PainLevel = _entry.PainLevel,
+            ActivityName = "Medication",
+            ActivityMinutes = 1,
+            MedicationTaken = true,
+            Note = "Took 1000MG of Tylenol"
+        };
+        await EntrySvc.UpsertAsync(tylenolEntry);
+        Snackbar.Add($"Logged Tylenol at {tylenolEntry.Timestamp:h:mm tt}", Severity.Success);
     }
 }
