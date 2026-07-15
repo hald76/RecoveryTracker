@@ -12,22 +12,16 @@ public class EntryService : IEntryService
     public async Task<List<DailyEntry>> GetAllAsync()
     {
         var entries = await LoadAsync();
-        return entries.OrderBy(e => e.EntryDate).ToList();
+        return entries.OrderBy(e => e.Timestamp).ToList();
     }
 
     public async Task<List<DailyEntry>> GetInRangeAsync(DateOnly from, DateOnly to)
     {
         var entries = await LoadAsync();
         return entries
-            .Where(e => e.EntryDate >= from && e.EntryDate <= to)
-            .OrderBy(e => e.EntryDate)
+            .Where(e => DateOnly.FromDateTime(e.Timestamp) >= from && DateOnly.FromDateTime(e.Timestamp) <= to)
+            .OrderBy(e => e.Timestamp)
             .ToList();
-    }
-
-    public async Task<DailyEntry?> GetByDateAsync(DateOnly date)
-    {
-        var entries = await LoadAsync();
-        return entries.FirstOrDefault(e => e.EntryDate == date);
     }
 
     public async Task<DailyEntry?> GetAsync(int id)
@@ -39,9 +33,7 @@ public class EntryService : IEntryService
     public async Task<DailyEntry> UpsertAsync(DailyEntry entry)
     {
         var entries = await LoadAsync();
-        var existing = entry.Id != 0
-            ? entries.FirstOrDefault(e => e.Id == entry.Id)
-            : entries.FirstOrDefault(e => e.EntryDate == entry.EntryDate);
+        var existing = entry.Id != 0 ? entries.FirstOrDefault(e => e.Id == entry.Id) : null;
 
         if (existing is null)
         {
@@ -53,7 +45,7 @@ public class EntryService : IEntryService
             return entry;
         }
 
-        existing.EntryDate = entry.EntryDate;
+        existing.Timestamp = entry.Timestamp;
         existing.PainLevel = entry.PainLevel;
         existing.ActivityName = entry.ActivityName;
         existing.ActivityMinutes = entry.ActivityMinutes;

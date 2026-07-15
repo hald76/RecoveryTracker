@@ -3,9 +3,10 @@
 <MudDialog>
     <DialogContent>
         <MudStack Spacing="6">
-            <div>
+            <MudStack Row="true" Spacing="4">
                 <MudDatePicker @bind-Date="_date" Label="Date" Variant="Variant.Outlined" />
-            </div>
+                <MudTimePicker @bind-Time="_time" Label="Time" Variant="Variant.Outlined" />
+            </MudStack>
 
             <div>
                 <MudText Typo="Typo.subtitle1">😊 Pain level: @_entry.PainLevel / 10</MudText>
@@ -61,6 +62,7 @@
 
     DailyEntry _entry = new();
     DateTime? _date;
+    TimeSpan? _time;
     string _selectedActivity = "Computer desk work";
 
     protected override void OnInitialized()
@@ -68,7 +70,7 @@
         _entry = new DailyEntry
         {
             Id = Entry.Id,
-            EntryDate = Entry.EntryDate,
+            Timestamp = Entry.Timestamp,
             PainLevel = Entry.PainLevel,
             ActivityName = Entry.ActivityName,
             ActivityMinutes = Entry.ActivityMinutes,
@@ -77,7 +79,8 @@
             Swelling = Entry.Swelling,
             Note = Entry.Note
         };
-        _date = _entry.EntryDate.ToDateTime(TimeOnly.MinValue);
+        _date = _entry.Timestamp.Date;
+        _time = _entry.Timestamp.TimeOfDay;
         _selectedActivity = WorkActivities.Fixed.Contains(_entry.ActivityName) ? _entry.ActivityName : WorkActivities.Other;
     }
 
@@ -90,7 +93,9 @@
 
     async Task SaveAsync()
     {
-        _entry.EntryDate = DateOnly.FromDateTime(_date ?? DateTime.Now);
+        var datePart = (_date ?? DateTime.Now).Date;
+        var timePart = _time ?? DateTime.Now.TimeOfDay;
+        _entry.Timestamp = datePart + timePart;
         var saved = await EntrySvc.UpsertAsync(_entry);
         MudDialog.Close(DialogResult.Ok(saved));
     }

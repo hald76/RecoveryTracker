@@ -69,7 +69,7 @@
                 <MudText Typo="Typo.h6">@_medAdherence.ToString("0")%</MudText>
             </MudItem>
             <MudItem xs="6" sm="3">
-                <MudText Typo="Typo.caption" Class="muted">Ice days</MudText>
+                <MudText Typo="Typo.caption" Class="muted">Ice applied</MudText>
                 <MudText Typo="Typo.h6">@_iceDays / @_entries.Count</MudText>
             </MudItem>
         </MudGrid>
@@ -82,13 +82,13 @@
         {
             <table class="report-table">
                 <thead>
-                    <tr><th>Date</th><th>Pain</th><th>Activity</th><th>Ice</th><th>Medication</th><th>Swelling</th><th>Note</th></tr>
+                    <tr><th>Logged</th><th>Pain</th><th>Activity</th><th>Ice</th><th>Medication</th><th>Swelling</th><th>Note</th></tr>
                 </thead>
                 <tbody>
                     @foreach (var e in _entries)
                     {
                         <tr>
-                            <td>@e.EntryDate.ToString("MMM d")</td>
+                            <td>@e.Timestamp.ToString("MMM d h:mm tt")</td>
                             <td>@e.PainLevel / 10</td>
                             <td>@e.ActivityName (@e.ActivityMinutes min)</td>
                             <td>@(e.IceApplied ? "Yes" : "No")</td>

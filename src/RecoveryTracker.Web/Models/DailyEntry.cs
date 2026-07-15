@@ -6,7 +6,7 @@ public class DailyEntry
 {
     public int Id { get; set; }
 
-    public DateOnly EntryDate { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.Now;
 
     [Range(0, 10)]
     public int PainLevel { get; set; }

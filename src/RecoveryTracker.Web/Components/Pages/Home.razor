@@ -5,76 +5,69 @@
 
 <PageTitle>Today — Recovery Tracker</PageTitle>
 
-@if (_entry is null)
-{
-    <MudText>Loading…</MudText>
-}
-else
-{
-    <MudStack Spacing="0" Class="mb-4">
-        <MudText Typo="Typo.h4">Today</MudText>
-        <MudText Typo="Typo.body2" Class="muted">
-            @_today.ToString("dddd, MMMM d, yyyy")
-            @if (_dayNumber is { } d)
-            {
-                <span> &nbsp;•&nbsp; Day @d post-op</span>
-            }
-        </MudText>
-    </MudStack>
+<MudStack Spacing="0" Class="mb-4">
+    <MudText Typo="Typo.h4">Today</MudText>
+    <MudText Typo="Typo.body2" Class="muted">
+        @_today.ToString("dddd, MMMM d, yyyy")
+        @if (_dayNumber is { } d)
+        {
+            <span> &nbsp;•&nbsp; Day @d post-op</span>
+        }
+    </MudText>
+</MudStack>
 
-    <MudPaper Class="pa-4" Elevation="1">
-        <MudStack Spacing="6">
-            <div>
-                <MudText Typo="Typo.subtitle1">😊 Pain level: @_entry.PainLevel / 10</MudText>
-                <MudSlider @bind-Value="_entry.PainLevel" Min="0" Max="10" Step="1" Color="Color.Primary" />
-            </div>
+<MudPaper Class="pa-4" Elevation="1">
+    <MudStack Spacing="6">
+        <div>
+            <MudText Typo="Typo.subtitle1">😊 Pain level: @_entry.PainLevel / 10</MudText>
+            <MudSlider @bind-Value="_entry.PainLevel" Min="0" Max="10" Step="1" Color="Color.Primary" />
+        </div>
 
-            <div>
-                <MudText Typo="Typo.subtitle1" Class="mb-1">🛠️ Activity</MudText>
-                <MudSelect T="string" Value="@_selectedActivity" ValueChanged="OnActivityChanged" Variant="Variant.Outlined">
-                    @foreach (var activity in WorkActivities.All)
-                    {
-                        <MudSelectItem Value="@activity">@WorkActivities.Emoji(activity) @activity</MudSelectItem>
-                    }
-                </MudSelect>
-
-                @if (_selectedActivity == WorkActivities.Other)
+        <div>
+            <MudText Typo="Typo.subtitle1" Class="mb-1">🛠️ Activity</MudText>
+            <MudSelect T="string" Value="@_selectedActivity" ValueChanged="OnActivityChanged" Variant="Variant.Outlined">
+                @foreach (var activity in WorkActivities.All)
                 {
-                    <MudTextField @bind-Value="_entry.ActivityName" Immediate="true" Label="Custom activity" Variant="Variant.Outlined" Class="mt-3" />
+                    <MudSelectItem Value="@activity">@WorkActivities.Emoji(activity) @activity</MudSelectItem>
                 }
+            </MudSelect>
 
-                <MudText Typo="Typo.body2" Class="muted mt-3">@_entry.ActivityMinutes min</MudText>
-                <MudSlider @bind-Value="_entry.ActivityMinutes" Min="1" Max="180" Step="1" Color="Color.Primary" />
-            </div>
+            @if (_selectedActivity == WorkActivities.Other)
+            {
+                <MudTextField @bind-Value="_entry.ActivityName" Immediate="true" Label="Custom activity" Variant="Variant.Outlined" Class="mt-3" />
+            }
 
-            <MudStack Row="true" Justify="Justify.SpaceBetween">
-                <MudSwitch @bind-Value="_entry.IceApplied" Color="Color.Info" Label="🧊 Ice applied" />
-                <MudSwitch @bind-Value="_entry.MedicationTaken" Color="Color.Success" Label="💊 Medication taken" />
-            </MudStack>
+            <MudText Typo="Typo.body2" Class="muted mt-3">@_entry.ActivityMinutes min</MudText>
+            <MudSlider @bind-Value="_entry.ActivityMinutes" Min="1" Max="180" Step="1" Color="Color.Primary" />
+        </div>
 
-            <div>
-                <MudText Typo="Typo.subtitle1" Class="mb-1">🦵 Swelling</MudText>
-                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
-                    @foreach (var level in Enum.GetValues<SwellingLevel>())
-                    {
-                        <MudButton Variant="@(_entry.Swelling == level ? Variant.Filled : Variant.Outlined)"
-                                   OnClick="@(() => _entry.Swelling = level)">@level</MudButton>
-                    }
-                </MudButtonGroup>
-            </div>
-
-            <MudTextField @bind-Value="_entry.Note" Immediate="true" Label="📝 Quick note" Variant="Variant.Outlined" Lines="3" />
-
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.Check" OnClick="SaveAsync">
-                Save today's entry
-            </MudButton>
+        <MudStack Row="true" Justify="Justify.SpaceBetween">
+            <MudSwitch @bind-Value="_entry.IceApplied" Color="Color.Info" Label="🧊 Ice applied" />
+            <MudSwitch @bind-Value="_entry.MedicationTaken" Color="Color.Success" Label="💊 Medication taken" />
         </MudStack>
-    </MudPaper>
-}
+
+        <div>
+            <MudText Typo="Typo.subtitle1" Class="mb-1">🦵 Swelling</MudText>
+            <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                @foreach (var level in Enum.GetValues<SwellingLevel>())
+                {
+                    <MudButton Variant="@(_entry.Swelling == level ? Variant.Filled : Variant.Outlined)"
+                               OnClick="@(() => _entry.Swelling = level)">@level</MudButton>
+                }
+            </MudButtonGroup>
+        </div>
+
+        <MudTextField @bind-Value="_entry.Note" Immediate="true" Label="📝 Quick note" Variant="Variant.Outlined" Lines="3" />
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Check" OnClick="SaveAsync">
+            Save entry
+        </MudButton>
+    </MudStack>
+</MudPaper>
 
 @code {
-    DailyEntry? _entry;
+    DailyEntry _entry = new();
     DateOnly _today;
     int? _dayNumber;
     string _selectedActivity = "Computer desk work";
@@ -82,8 +75,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         _today = DateOnly.FromDateTime(DateTime.Now);
-        _entry = await EntrySvc.GetByDateAsync(_today) ?? new DailyEntry { EntryDate = _today };
-        _selectedActivity = WorkActivities.Fixed.Contains(_entry.ActivityName) ? _entry.ActivityName : WorkActivities.Other;
 
         var profile = await ProfileSvc.GetAsync();
         if (profile.SurgeryDate is { } sd)
@@ -93,14 +84,16 @@ else
     void OnActivityChanged(string value)
     {
         _selectedActivity = value;
-        if (value != WorkActivities.Other) _entry!.ActivityName = value;
-        else if (WorkActivities.Fixed.Contains(_entry!.ActivityName)) _entry.ActivityName = "";
+        if (value != WorkActivities.Other) _entry.ActivityName = value;
+        else if (WorkActivities.Fixed.Contains(_entry.ActivityName)) _entry.ActivityName = "";
     }
 
     async Task SaveAsync()
     {
-        _entry = await EntrySvc.UpsertAsync(_entry!);
-        _entry.Note = null;
-        Snackbar.Add("Saved today's entry", Severity.Success);
+        _entry.Timestamp = DateTime.Now;
+        await EntrySvc.UpsertAsync(_entry);
+        Snackbar.Add($"Entry saved at {_entry.Timestamp:h:mm tt}", Severity.Success);
+        _entry = new DailyEntry();
+        _selectedActivity = _entry.ActivityName;
     }
 }
